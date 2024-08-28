@@ -3,16 +3,16 @@ const _cliProgress = require('cli-progress');
 const spintax = require('mel-spintax');
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 require("./welcome");
-var spinner = require("./step");
-var utils = require("./utils");
-var qrcode = require('qrcode-terminal');
-var path = require("path");
-var argv = require('yargs').argv;
-var rev = require("./detectRev");
-var constants = require("./constants");
-var configs = require("../bot");
-var fs = require("fs");
+let spinner = require("./step");
+let utils = require("./utils");
+let qrcode = require('qrcode-terminal');
+let path = require("path");
+let argv = require('yargs').argv;
+let constants = require("./constants");
+let configs = require("../bot");
+let fs = require("fs");
 const fetch = require("node-fetch");
+const FormData = require("form-data");
 const { lt } = require('semver');
 const mime = require('mime');
 const moment = require('moment')
@@ -20,40 +20,28 @@ const moment = require('moment')
 // take parameter from json 
 // only after authentication success from whatsapp
 const graphicalInterface = require('./server/server')
-//TODO: remove this
-// const {write,read}=require('../media/tem')
-
-
 
 let appconfig = null;
 
-//console.log(process.cwd());
-
 async function Main() {
-
     try {
-        //console.log(configs);
-        var page;
         await downloadAndStartThings();
-        // var isLogin = await checkLogin();
-        // if (!isLogin) {
-        //     await getAndShowQR();
-        // }
-        // if (configs.smartreply.suggestions.length > 0) {
-        //     await setupSmartReply();
-        // }
-        // await setupPopup();
-        await checkForUpdate();
+        //await checkForUpdate();
+
         console.log("WBOT is ready !! Let those message come.");
-    } catch (e) {
+    }
+    catch (e) {
         console.error("\nLooks like you got an error. " + e);
-        try {
-            page.screenshot({ path: path.join(process.cwd(), "error.png") })
-        } catch (s) {
-            console.error("Can't create shreenshot, X11 not running?. " + s);
-        }
+        // TODO : Not working on windows, so commenting this screenshot feature
+        // try {
+        //     let page;
+        //     page.screenshot({ path: path.join(process.cwd(), "error.png") })
+        // } 
+        // catch (s) {
+        //     console.error("Can't create shreenshot, X11 not running?. " + s);
+        // }
         console.warn(e);
-        console.error("Don't worry errors are good. They help us improve. A screenshot has already been saved as error.png in current directory. Please mail it on vasani.arpit@gmail.com along with the steps to reproduce it.\n");
+        //console.error("Don't worry errors are good. They help us improve. A screenshot has already been saved as error.png in current directory. Please mail it on vasani.arpit@gmail.com along with the steps to reproduce it.\n");
         throw e;
     }
 
@@ -63,34 +51,29 @@ async function Main() {
     async function downloadAndStartThings() {
         appconfig = await utils.externalInjection("bot.json");
         appconfig = JSON.parse(appconfig);
+
         spinner.start("Downloading chromium\n");
+        
         const browserFetcher = puppeteer.createBrowserFetcher({ platform: process.platform, path: process.cwd() });
         const progressBar = new _cliProgress.Bar({}, _cliProgress.Presets.shades_grey);
+
         progressBar.start(100, 0);
-        //var revNumber = await rev.getRevNumber();
         const revisionInfo = await browserFetcher.download("1313161", (download, total) => {
-            //console.log(download);
             var percentage = (download * 100) / total;
             progressBar.update(percentage);
         });
         progressBar.update(100);
+
         spinner.stop("Downloading chromium ... done!");
-        //console.log(revisionInfo.executablePath);
         spinner.start("Launching browser\n");
+
         var pptrArgv = [];
         if (argv.proxyURI) {
             pptrArgv.push('--proxy-server=' + argv.proxyURI);
         }
+        
         const extraArguments = Object.assign({});
         extraArguments.userDataDir = constants.DEFAULT_DATA_DIR;
-        // const browser = await puppeteer.launch({
-        //     executablePath: revisionInfo.executablePath,
-        //     defaultViewport: null,
-        //     headless: appconfig.appconfig.headless,
-        //     userDataDir: path.join(process.cwd(), "ChromeSession"),
-        //     devtools: false,
-        //     args: [...constants.DEFAULT_CHROMIUM_ARGS, ...pptrArgv], ...extraArguments
-        // });
 
         const client = new Client({
             puppeteer: {
@@ -101,6 +84,7 @@ async function Main() {
                 args: [...pptrArgv], ...extraArguments
             }
         });
+
         if (argv.proxyURI) {
             spinner.info("Using a Proxy Server");
         }
@@ -116,19 +100,20 @@ async function Main() {
         });
 
         client.on('ready', async () => {
-            spinner.info('WBOT is spinning up!');
-            await utils.delay(5000)
-            let server = appconfig.appconfig.server
-            if (server) {
+            //DISABLE: The Graphical Interface is not neccessary for now.
+            // spinner.info('WBOT is spinning up!');
+            // await utils.delay(5000);
 
-                //Graphical interface to edit bot.json
-                const USERNAME = server.username;
-                const PASSWORD = server.password;
-                const PORT = server.port;
+            // let server = appconfig.appconfig.server;
+            // if (server) {
+            //     //Graphical interface to edit bot.json
+            //     const USERNAME = server.username;
+            //     const PASSWORD = server.password;
+            //     const PORT = server.port;
 
-                graphicalInterface(USERNAME, PASSWORD, PORT);
-            }
-            // await smartReply({client: client})
+            //     graphicalInterface(USERNAME, PASSWORD, PORT);
+            // }
+
             //TODO: if replyUnreadMsg is true then get the unread messages and reply to them.
         });
 
@@ -139,41 +124,39 @@ async function Main() {
         client.on('auth_failure', msg => {
             // Fired if session restore was unsuccessful
             console.error('AUTHENTICATION FAILURE', msg);
-            // process.exit(1);
         });
 
-        client.on('message', async msg => {
-            // console.log(msg.body)
+        client.on('message_create', async msg => {
+            //DISABLE: Remove messages.json
+            // const messages = require(path.resolve('messages.json'));
+            // msg.timestamp = moment().format('DD/MM/YYYY HH:mm');
+            // msg._data['chatName'] = chat.name
+            // messages.push(msg)
+            // fs.writeFileSync(path.resolve('messages.json'), JSON.stringify(messages, null, 2));
 
-            // write(msg)
-
-            let chat = await client.getChatById(msg.from)
-            console.log(`Message ${msg.body} received in ${chat.name} chat`)
-            const messages = require(path.resolve('messages.json'));
-            msg.timestamp = moment().format('DD/MM/YYYY HH:mm');
-            msg._data['chatName'] = chat.name
-            messages.push(msg)
-            fs.writeFileSync(path.resolve('messages.json'), JSON.stringify(messages, null, 2))
+            //DISABLE: Does not neccessary check for media
             // if it is a media message then download the media and save it in the media folder
-            if (msg.hasMedia && configs.appconfig.downloadMedia) {
-                console.log("Message has media. downloading");
-                const media = await msg.downloadMedia()
-                // checking if director is present or not
-                if (!fs.existsSync(path.join(process.cwd(), "receivedMedia"))) {
-                    fs.mkdirSync(path.join(process.cwd(), "receivedMedia"));
-                }
+            // if (msg.hasMedia && configs.appconfig.downloadMedia) {
+            //     console.log("Message has media. downloading");
+            //     const media = await msg.downloadMedia()
+            //     // checking if director is present or not
+            //     if (!fs.existsSync(path.join(process.cwd(), "receivedMedia"))) {
+            //         fs.mkdirSync(path.join(process.cwd(), "receivedMedia"));
+            //     }
 
-                if (media) {
-                    // write the data to a file
-                    let extension = mime.getExtension(media.mimetype)
-                    fs.writeFileSync(path.join(process.cwd(), "receivedMedia", msg.from + msg.id.id + "." + extension), media.data, 'base64')
-                    console.log("Media has been downloaded");
-                } else {
-                    console.log("There was an issue in downloading the media");
-                }
-            } else {
-                console.log("Message doesn't have media or it is not enabled in bot.config.json");
-            }
+            //     if (media) {
+            //         // write the data to a file
+            //         let extension = mime.getExtension(media.mimetype)
+            //         fs.writeFileSync(path.join(process.cwd(), "receivedMedia", msg.from + msg.id.id + "." + extension), media.data, 'base64')
+            //         console.log("Media has been downloaded");
+            //     } 
+            //     else {
+            //         console.log("There was an issue in downloading the media");
+            //     }
+            // } 
+            // else {
+            //     console.log("Message doesn't have media or it is not enabled in bot.config.json");
+            // }
 
 
             if (msg.body.length != 0) {
@@ -182,7 +165,6 @@ async function Main() {
                 //TODO: call the webhook
             }
         });
-
 
         await client.initialize();
 
@@ -201,10 +183,6 @@ async function Main() {
                 appconfig = JSON.parse(appconfig);
             }, timeout);
         });
-
-        // page.exposeFunction("getFile", utils.getFileInBase64);
-        // page.exposeFunction("saveFile", utils.saveFileFromBase64);
-        // page.exposeFunction("resolveSpintax", spintax.unspin);
     }
 }
 
@@ -226,7 +204,9 @@ async function getResponse(msg, message) {
         }
     }
 
-    let response = await spintax.unspin(message);
+    let response = "";
+    if (message !== undefined)
+        response = spintax.unspin(message);
 
     // Adding variables: 
     response = response.replace('[#name]', msg._data.notifyName)
@@ -236,42 +216,44 @@ async function getResponse(msg, message) {
     return response;
 }
 
-
-
 async function sendReply({ msg, client, data, noMatch }) {
     let globalWebhook = appconfig.appconfig.webhook;
 
     if (noMatch) {
         if (appconfig.noMatch.length != 0) {
-            let response = await getResponse(msg, appconfig.noMatch);;
-            console.log(`No match found Replying with ${response}`);
+            let response = await getResponse(msg, appconfig.noMatch);
+            
             if (!configs.appconfig.quoteMessageInReply) {
                 await client.sendMessage(msg.from, response);
             }
             else {
                 await msg.reply(response);
             }
-            await processWebhook({ msg, client, webhook: globalWebhook });
-
-            return;
+            //await processWebhook({ msg, client, webhook: globalWebhook });
         }
-        console.log(`No match found`);
+        
         return;
     }
 
+    // console.log(`msg => `, msg);
+    // console.log(`client => `, client);
+    // console.log(`data => `, data);
 
+    if (data.hasOwnProperty('webhook') && data.webhook.length > 0) {
+        const webhookStatus = await processWebhook({ msg, client, webhookName: data.webhookName, webhook: data.webhook });
+        if (!webhookStatus) return;
+    }
+    //DISABLE: Global webhook is not neccessary for now
+    // const globalWebhookStatus = await processWebhook({ msg, client, webhook: globalWebhook });
+    // if (!globalWebhookStatus) return;
 
     let response = await getResponse(msg, data.response);
-    console.log(`Replying with ${response}`);
-
 
     if (data.afterSeconds) {
         await utils.delay(data.afterSeconds * 1000);
     }
 
-
     if (data.file) {
-
         var captionStatus = data.responseAsCaption;
 
         // We consider undefined responseAsCaption as a false
@@ -279,7 +261,6 @@ async function sendReply({ msg, client, data, noMatch }) {
             captionStatus = false;
         }
 
-        // files = await spintax.unspin(data.file);
         files = data.file
         if (Array.isArray(files)) {
             files.forEach(file => {
@@ -289,6 +270,7 @@ async function sendReply({ msg, client, data, noMatch }) {
         else {
             sendFile(files)
         }
+
         if (!captionStatus) {
             if (!configs.appconfig.quoteMessageInReply) {
                 await client.sendMessage(msg.from, response);
@@ -299,7 +281,8 @@ async function sendReply({ msg, client, data, noMatch }) {
         }
         // if responseAsCaption is true, send image with response as a caption
         // else send image and response seperately
-    } else {
+    } 
+    else {
         if (!configs.appconfig.quoteMessageInReply) {
             await client.sendMessage(msg.from, response);
         }
@@ -307,57 +290,45 @@ async function sendReply({ msg, client, data, noMatch }) {
             await msg.reply(response);
         }
     }
-    if (data.hasOwnProperty('webhook') && data.webhook.length > 0) {
-        let localWebhook = data.webhook;
-        await processWebhook({ msg, client, webhook: localWebhook });
-    }
-    await processWebhook({ msg, client, webhook: globalWebhook });
 
     function sendFile(file) {
-
         if (captionStatus == true) {
             utils
                 .getFileData(file)
                 .then(async ({ fileMime, base64 }) => {
-
-                    // console.log(fileMime);
                     // send response in place of caption as a last argument in below function call
-                    var media = await new MessageMedia(
+                    var media = new MessageMedia(
                         fileMime,
                         base64,
                         file
                     );
+
                     if (!configs.appconfig.quoteMessageInReply) {
                         await client.sendMessage(msg.from, media, { caption: response });
                     }
                     else {
-                        // #TODO Caption is not working
                         const data = await msg.getChat();
-                        // console.log(data)
-                        // console.log({ caption: response })
-                        // console.log(media)
+                        
                         await msg.reply(media, data.id._serialized, { caption: response });
-                        // await msg.reply(media,);
                     }
                 })
                 .catch((error) => {
                     console.log("Error in sending file\n" + error);
                 });
-        } else {
-            console.log(
-                "Either the responseAsCaption is undefined or false, Make it true to allow caption to a file"
-            );
+        } 
+        else {
+            console.log("Either the responseAsCaption is undefined or false, Make it true to allow caption to a file");
 
             utils
                 .getFileData(file)
                 .then(async ({ fileMime, base64 }) => {
-                    // console.log(fileMime);
                     // send blank in place of caption as a last argument in below function call
-                    var media = await new MessageMedia(
+                    var media = new MessageMedia(
                         fileMime,
                         base64,
                         file
                     );
+
                     if (!configs.appconfig.quoteMessageInReply) {
                         await client.sendMessage(msg.from, media);
                     }
@@ -370,115 +341,175 @@ async function sendReply({ msg, client, data, noMatch }) {
                 })
         }
     }
-
 }
 
-async function processWebhook({ msg, client, webhook }) {
+async function processWebhook({ msg, client, webhookName, webhook }) {
+    if (!webhook) return true;
 
-    if (!webhook) return;
+    const bearerToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VybmFtZSI6ImFwaWtleXdhYm90IiwiSWQiOiIyIiwiQ29udGFjdE5hbWUiOiJXQUJPVCIsIkNvbnRhY3RDb21wYW55IjoiUmFwaWR0ZWNoIiwiSXNBY3RpdmUiOiJUcnVlIiwiQ3JlYXRlQ2F0ZWdvcnkiOiJGYWxzZSIsIkNyZWF0ZVJvbGUiOiJGYWxzZSIsIkNyZWF0ZVRhc2siOiJUcnVlIiwiQ3JlYXRlVXBkYXRlVGFza0RldGFpbCI6IkZhbHNlIiwiQ3JlYXRlVXNlciI6IkZhbHNlIiwiRGVsZXRlQ2F0ZWdvcnkiOiJGYWxzZSIsIkRlbGV0ZVJvbGUiOiJGYWxzZSIsIkRlbGV0ZVRhc2siOiJGYWxzZSIsIkRlbGV0ZVRhc2tEZXRhaWwiOiJGYWxzZSIsIkRlbGV0ZVVzZXIiOiJGYWxzZSIsIkdldENhdGVnb3J5Tm9kZXMiOiJGYWxzZSIsIkdldEZpbGUiOiJGYWxzZSIsIkdldFJvbGVzIjoiRmFsc2UiLCJHZXRTeXN0ZW1GaWxlIjoiRmFsc2UiLCJHZXRUYXNrIjoiVHJ1ZSIsIkdldFRhc2tEZXRhaWwiOiJGYWxzZSIsIkdldFVzZXIiOiJGYWxzZSIsIk1pZ3JhdGVVc2VyIjoiRmFsc2UiLCJTZWFyY2hUYXNrcyI6IkZhbHNlIiwiU2VhcmNoVXNlcnMiOiJGYWxzZSIsIlNob3dEYXNoYm9hcmQiOiJGYWxzZSIsIlN5c3RlbUZpbGVzIjoiRmFsc2UiLCJTeXN0ZW1Mb2dzIjoiRmFsc2UiLCJVcGRhdGVDYXRlZ29yeSI6IlRydWUiLCJVcGRhdGVSb2xlIjoiRmFsc2UiLCJVcGRhdGVUYXNrIjoiVHJ1ZSIsIlVwZGF0ZVVzZXIiOiJGYWxzZSIsIlZhbGlkYXRlVXNlciI6IkZhbHNlIiwibmJmIjoxNzI0NzMzMjA0LCJleHAiOjE3MjQ4MTk2MDQsImlhdCI6MTcyNDczMzIwNH0.WCoBVheQW4tUb8J7fpv8cVyxC5rz8C9FAs9CrX9hk64';
 
-    body = {};
-    body.text = msg.body;
-    body.type = 'message';
-    body.user = msg.id.remote;
+    try {
+        const data = await eval(webhookName + '();');
+        const response = await data.json();
 
-    const data = await fetch(webhook, {
-        method: "POST",
-        body: JSON.stringify(body),
-        headers: {
-            'Content-Type': 'application/json'
+        //replying to the user based on response
+        if (response && response.success) {
+            response.replies.forEach(async (itemResponse) => {
+                itemResponse = await getResponse(msg, itemResponse);
+
+                if (!configs.appconfig.quoteMessageInReply) {
+                    await client.sendMessage(msg.from, itemResponse);
+                }
+                else {
+                    await msg.reply(itemResponse);
+                }
+
+                //sending files if there is any 
+                if (itemResponse.files && itemResponse.files.length > 0) {
+                    itemResponse.files.forEach(async (itemFile) => {
+
+                        const mimeTypeMatch = itemFile.file.match(/^data:(.*?);/);
+
+                        const base64Data = mimeTypeMatch ? itemFile.file.split(',')[1] : itemFile.file;
+
+                        const mimeType = mimeTypeMatch ? itemFile.file.split(':')[1].split(';')[0] : "image/jpg";
+
+                        var media = await new MessageMedia(
+                            mimeType,
+                            base64Data,
+                            itemFile.name
+                        );
+
+                        if (!configs.appconfig.quoteMessageInReply) {
+                            await client.sendMessage(msg.from, media);
+                        }
+                        else {
+                            await msg.reply(media);
+                        }
+                    })
+                }
+            });
+
+            return true;
         }
-    })
+    }
+    catch (e) {
+        console.error("\nPlease contact your administrator. " + e);
+        console.warn(e);
+        return false;
+    }
 
-    const response = await data.json();
-
-    //replying to the user based on response
-    if (response && response.length > 0) {
-        response.forEach(async (itemResponse) => {
-
-            itemResponse.text = await getResponse(msg, itemResponse.text);
-
-            if (!configs.appconfig.quoteMessageInReply) {
-                await client.sendMessage(msg.from, itemResponse.text);
+    async function CreateTicket() {
+        const today = new Date();
+        const chat = await client.getChatById(msg.from);
+        const bodyChat = msg.body.split(":")[1];
+    
+        const formdata = new FormData();
+        formdata.append("portalId", "1");
+        formdata.append("description", bodyChat);
+        formdata.append("status", "New");
+        formdata.append("priority", "Normal");
+        formdata.append("createdDate", today.toISOString().slice(0, 10));
+        formdata.append("requesterName", chat.name);
+        formdata.append("requesterPhone", chat.id.user);
+        formdata.append("sendEmails", "false");
+    
+        const data = await fetch(webhook, {
+            method: "POST",
+            body: formdata,
+            headers: {
+                'Authorization': 'Bearer ' + bearerToken,
+                // 'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>'
             }
-            else {
-                await msg.reply(itemResponse.text);
+        })
+    
+        return data;
+    }
+
+    async function GetTicket() {
+        const chat = await client.getChatById(msg.from);
+        const bodyChat = msg.body.split(":")[1];
+        webhook = webhook + `?TaskId=${bodyChat.replaceAll(/\s/g,'')}&RequesterPhone=${chat.id.user}`;
+
+        const data = await fetch(webhook, {
+            method: "POST",
+            headers: {
+                'Authorization': 'Bearer ' + bearerToken,
+                // 'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>'
             }
+        })
 
-            //sending files if there is any 
-            if (itemResponse.files && itemResponse.files.length > 0) {
-                itemResponse.files.forEach(async (itemFile) => {
+        return data;
+    }
 
-                    const mimeTypeMatch = itemFile.file.match(/^data:(.*?);/);
+    async function ResolvedTicket() {
+        const chat = await client.getChatById(msg.from);
+        const bodyChat = msg.body.split(":")[1];
+        
+        const formdata = new FormData();
+        formdata.append("taskId", bodyChat);
+        formdata.append("status", "Resolved");
 
-                    const base64Data = mimeTypeMatch ? itemFile.file.split(',')[1] : itemFile.file;
-
-                    const mimeType = mimeTypeMatch ? itemFile.file.split(':')[1].split(';')[0] : "image/jpg";
-
-                    var media = await new MessageMedia(
-                        mimeType,
-                        base64Data,
-                        itemFile.name
-                    );
-
-                    if (!configs.appconfig.quoteMessageInReply) {
-                        await client.sendMessage(msg.from, media);
-                    }
-                    else {
-                        await msg.reply(media);
-                    }
-                })
+        const data = await fetch(webhook, {
+            method: "POST",
+            body: formdata,
+            headers: {
+                'Authorization': 'Bearer ' + bearerToken,
+                // 'Content-Type': 'multipart/form-data; boundary=<calculated when request is sent>'
             }
-        });
+        })
+
+        return data;
     }
 }
 
 async function smartReply({ msg, client }) {
-
-    // console.log(msg.body)
     const data = msg?.body;
+    const isFromMe = msg?._data.id.fromMe;
     const list = appconfig.bot;
 
     //Don't reply is sender is blocked
     const senderNumber = msg.from.split("@")[0]
     var blockedNumbers = appconfig.blocked
     var allowedNumbers = appconfig.allowed
+    
     // check if blocked numnbers are there or not. 
     // if current number is init then return
     if (Array.isArray(blockedNumbers) && blockedNumbers.includes(senderNumber)) {
-        console.log("Message received but sender is blocked so will not reply.")
+        //console.log("Message received but sender is blocked so will not reply.")
         return;
     }
 
     if (Array.isArray(allowedNumbers) && allowedNumbers.length > 0 && !allowedNumbers.includes(senderNumber)) {
-        console.log("Message received but user is not in allowed list so will not reply.")
+        //console.log("Message received but user is not in allowed list so will not reply.")
         return;
     }
 
     // Don't do group reply if isGroupReply is off
     if (msg.id.participant && appconfig.appconfig.isGroupReply == false) {
-        console.log(
-            "Message received in group and group reply is off. so will not take any actions."
-        );
+        //console.log("Message received in group and group reply is off. so will not take any actions.");
         return;
     }
 
-    // webhook Call
+    let chat = await client.getChatById(msg.from);
+    console.log(`Message ${msg.body} received in ${chat.name} chat`);
 
     var exactMatch = list.find((obj) =>
-        obj.exact.find((ex) => ex == data.toLowerCase())
+        obj.exact.find((ex) => ex == data.toLowerCase() && (isFromMe == (obj.onlyFromMe ?? false)))
     );
-
     if (exactMatch != undefined) {
         return sendReply({ msg, client, data: exactMatch });
     }
-    var PartialMatch = list.find((obj) =>
-        obj.contains.find((ex) => data.toLowerCase().search(ex) > -1)
+
+    var partialMatch = list.find((obj) =>
+        obj.contains.find((ex) => data.toLowerCase().search(ex) > -1 && (isFromMe == (obj.onlyFromMe ?? false)))
     );
-    if (PartialMatch != undefined) {
-        return sendReply({ msg, client, data: PartialMatch });
+    if (partialMatch != undefined) {
+        return sendReply({ msg, client, data: partialMatch });
     }
-    sendReply({ msg, client, data: exactMatch, noMatch: true });
+
+    // No match
+    sendReply({ msg, client, data: null, noMatch: true });
 }
 
 async function checkForUpdate() {

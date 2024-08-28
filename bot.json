@@ -6,7 +6,7 @@
         "downloadMedia": true,
         "replyUnreadMsg": false,
         "CustomInjectionFolder": "",
-        "quoteMessageInReply": false,
+        "quoteMessageInReply": true,
         "server": {
             "port": 8080,
             "username": "admin",
@@ -15,132 +15,66 @@
     },
     "bot": [
         {
-            "contains": [
-                "audio"
-            ],
-            "exact": [],
-            "response": "Sending audio",
-            "file": [
-                "./mediaToBeSent/file_example_MP3_700KB.mp3",
-                "./mediaToBeSent/file_example_MP3_1MG.mp3"
-            ]
-        },
-        {
-            "contains": [
-                "github"
-            ],
-            "exact": [],
-            "response": "Sending images",
-            "file": [
-                "./mediaToBeSent/github.png",
-                "./mediaToBeSent/github-two.png"
-            ]
-        },
-        {
-            "contains": [
-                "bill","order"
-            ],
-            "exact": [],
-            "response": "Please wait",
-            "file": [
-            ],
-            "webhook":""
+            "contains": [],
+            "exact": ["menu"],
+            "response": "Terima kasih telah menghubungi kami.\n\nSilahkan memilih menu yang tersedia di bawah ini:\n1. Info terkait jam kerja karyawan\n2. Info terkait pengajuan cuti karyawan\n3. Info terkait pengembangan karyawan\n4. Info terkait pengunduran diri karyawan\n5. Buat tiket untuk pertanyaan lainnya\n\nSilahkan ketik angka menu yang diinginkan.",
+            "webhook": "",
+            "afterSeconds": 0
         },
         {
             "contains": [],
-            "exact": [
-                "hi"
-            ],
-            "response": "{hello|howdy}",
+            "exact": ["1"],
+            "response": "Jam kerja karyawan adalah hari Senin - Jumat, pukul 08.00 - 17.00 WIB.",
             "webhook": ""
         },
         {
             "contains": [],
-            "exact": [
-                "hello"
-            ],
-            "response": "hi",
-            "afterSeconds": 3
+            "exact": ["2"],
+            "response": "Pengajuan cuti karyawan dapat dilakukan dengan mengisi formulir cuti dan melampirkan surat keterangan sakit dari dokter.",
+            "webhook": ""
         },
         {
             "contains": [],
-            "exact": [
-                "hiee"
-            ],
-            "response": "hi"
+            "exact": ["3"],
+            "response": "Pengembangan karyawan dilakukan melalui pelatihan dan pendidikan.",
+            "webhook": ""
         },
         {
             "contains": [],
-            "exact": [
-                "hey"
-            ],
-            "response": "hi"
-        },
-        {
-            "contains": [
-                "michhami",
-                "dukkadam"
-            ],
-            "exact": [],
-            "response": "Michhami Dukkadam 🙏"
-        },
-        {
-            "contains": [
-                "happy",
-                "birthday",
-                "bday"
-            ],
-            "exact": [],
-            "response": "Thank you"
+            "exact": ["4"],
+            "response": "Pengunduran diri karyawan dapat dilakukan dengan mengajukan surat pengunduran diri ke atasan langsung.",
+            "webhook": ""
         },
         {
             "contains": [],
-            "exact": [
-                "how are you"
-            ],
-            "response": "I am {good {thanks| thank you}|great}. How about you?"
+            "exact": ["5"],
+            "response": "Silahkan memberikan informasi lengkap terkait permasalahan yang dihadapi.\n\nSilahkan mulai dengan menuliskan *Buat Tiket:*",
+            "webhook": ""
         },
         {
-            "contains": [],
-            "exact": [
-                "hbd"
-            ],
-            "response": "Thank you"
+            "contains": ["buat tiket:"],
+            "exact": [""],
+            "response": "Mohon ditunggu kami akan segera memproses permintaan anda.",
+            "webhookName": "CreateTicket",
+            "webhook": "http://localhost:5001/api/V1/CreateTask"
         },
         {
-            "contains": [
-                "શુભકામના",
-                "જન્મદિન"
-            ],
-            "exact": [],
-            "response": "આભાર 🙏"
+            "onlyFromMe": true,
+            "contains": ["tutup tiket:"],
+            "exact": [""],
+            "response": "Mohon ditunggu kami akan segera memproses permintaan anda.",
+            "webhookName": "ResolvedTicket", 
+            "webhook": "http://localhost:5001/api/V1/UpdateTask"
         },
         {
-            "contains": [
-                "janmdin",
-                "hardik",
-                "shubhkaamna"
-            ],
-            "exact": [],
-            "response": "aabhar 🙏"
-        },
-        {
-            "contains": [],
-            "exact": [
-                "variables"
-            ],
-            "response": "this is sample of variables:\nHey [#name] 👋, [#greetings]. \nThis is your phone number, [#phoneNumber]"
+            "contains": ["status tiket:"],
+            "exact": [""],
+            "response": "Mohon ditunggu kami akan segera memproses permintaan anda.",
+            "webhookName": "GetTicket",
+            "webhook": "http://localhost:5001/api/V1/GetTask"
         }
     ],
     "blocked": [],
-    "allowed": [],
-    "noMatch": "{🤔|🤷‍♂️}",
-    "smartreply": {
-        "suggestions": [
-            "Hello",
-            "Welcome to my store !!",
-            "Thanks for reaching out 🙏"
-        ],
-        "clicktosend": true
-    }
+    "allowed": ["6281803244649"],
+    "noMatch": ""
 }
